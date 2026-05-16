@@ -108,26 +108,13 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
 
-  if (typeof window !== "undefined") {
-    // set up once
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useAuthSync(router, queryClient);
-  }
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <Outlet />
-    </QueryClientProvider>
-  );
-}
-
-import { useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-function useAuthSync(router: ReturnType<typeof useRouter>, queryClient: QueryClient) {
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange(() => {
       router.invalidate();
@@ -135,4 +122,10 @@ function useAuthSync(router: ReturnType<typeof useRouter>, queryClient: QueryCli
     });
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Outlet />
+    </QueryClientProvider>
+  );
 }

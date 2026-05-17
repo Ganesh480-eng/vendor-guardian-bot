@@ -109,7 +109,7 @@ export const evaluateVendor = createServerFn({ method: "POST" })
       const result = await generateObject({
         model,
         schema: VendorEvaluationSchema,
-        mode: "json",
+        
         system,
         prompt,
       });

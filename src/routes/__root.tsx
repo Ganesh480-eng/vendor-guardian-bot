@@ -72,14 +72,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "VendorGuard – AI Vendor Risk Assessment Agent" },
+      { name: "description", content: "AI-powered Vendor Risk Assessment Agent using ArmorIQ. Automatically evaluates vendors based on security posture, compliance, breach history, and policy-gated a" },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "VendorGuard – AI Vendor Risk Assessment Agent" },
+      { property: "og:description", content: "AI-powered Vendor Risk Assessment Agent using ArmorIQ. Automatically evaluates vendors based on security posture, compliance, breach history, and policy-gated a" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "VendorGuard – AI Vendor Risk Assessment Agent" },
+      { name: "twitter:description", content: "AI-powered Vendor Risk Assessment Agent using ArmorIQ. Automatically evaluates vendors based on security posture, compliance, breach history, and policy-gated a" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/7704b826-19ea-4919-b450-08ed4a877e34" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/7704b826-19ea-4919-b450-08ed4a877e34" },
     ],
     links: [
       {

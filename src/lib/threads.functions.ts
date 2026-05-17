@@ -90,13 +90,40 @@ export const evaluateVendor = createServerFn({ method: "POST" })
     const gateway = createLovableAiGatewayProvider(apiKey);
     const model = gateway("google/gemini-2.5-flash");
 
-    const { object } = await generateObject({
-      model,
-      schema: VendorEvaluationSchema,
-      system:
-        "You are a vendor risk assessment analyst. Evaluate the SaaS vendor for security, privacy, and compliance posture. Always return at least 5 concrete checks: SOC 2, ISO 27001, GDPR/DPA, Breach history, Privacy policy freshness, Subprocessor disclosure. Be concise and decisive. If unknown, mark status as 'unknown' and explain why.",
-      prompt: `Vendor: ${thread.vendor_name}\n\nProduce a risk evaluation. Score 0=safest, 100=most risky. risk_level: low (<33), medium (<66), high (>=66).`,
-    });
+    const system =
+      "You are a vendor risk assessment analyst. Evaluate the SaaS vendor for security, privacy, and compliance posture. Return STRICT JSON only matching this TypeScript type:\n" +
+      `{
+  "vendor_name": string,
+  "risk_level": "low" | "medium" | "high",
+  "score": number, // 0=safest, 100=most risky
+  "summary": string,
+  "checks": Array<{ "name": string, "status": "pass"|"warn"|"fail"|"unknown", "detail": string }>, // >=5 items
+  "recommendation": string
+}\n` +
+      "Always include at least 5 checks: SOC 2, ISO 27001, GDPR/DPA, Breach history, Privacy policy freshness, Subprocessor disclosure. If unknown, set status='unknown' and explain in detail. Do not wrap in markdown.";
+
+    const prompt = `Vendor: ${thread.vendor_name}\n\nReturn the JSON object now. risk_level mapping: low(<33), medium(<66), high(>=66).`;
+
+    let object: import("./vendor-schema").VendorEvaluation;
+    try {
+      const result = await generateObject({
+        model,
+        schema: VendorEvaluationSchema,
+        
+        system,
+        prompt,
+      });
+      object = result.object;
+    } catch (e) {
+      // Fallback: ask for raw text JSON and parse manually
+      const { generateText } = await import("ai");
+      const { text } = await generateText({ model, system, prompt });
+      const match = text.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error("Model did not return JSON: " + text.slice(0, 200));
+      const parsed = JSON.parse(match[0]);
+      if (!parsed.vendor_name) parsed.vendor_name = thread.vendor_name;
+      object = VendorEvaluationSchema.parse(parsed);
+    }
 
     await supabase.from("messages").insert({
       thread_id: thread.id,

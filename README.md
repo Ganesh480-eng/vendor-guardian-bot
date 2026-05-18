@@ -86,7 +86,7 @@ If the live demo shows an error, copy the URL and paste it directly into Google 
 
 ## Presentation
 
-HackSparks_VendorGuardAI_FinalPitch (2).pptx
+[Download PPT](https://github.com/Ganesh480-eng/vendor-guardian-bot/raw/main/HackSparks_VendorGuardAI_FinalPitch%20(2).pptx)
 
 ---
 

@@ -1,15 +1,29 @@
 # VendorGuard AI
 
-AI-powered vendor risk assessment agent built for HackWithBangalore / AI Agent for the Real World.
+AI-powered vendor risk assessment agent built for HackWithBangalore 3.0 – AI Agent for the Real World.
 
-Features:
+## Features
 - Vendor risk scoring
-- SOC2 / GDPR / ISO checks
-- ArmorIQ policy gating
+- SOC2 / GDPR / ISO compliance checks
+- ArmorIQ policy-gated approvals
 - Audit trail logging
-- AI-based recommendations
+- AI-powered recommendations
+- Real-time vendor evaluation workflow
 
-Live Demo:
+## Tech Stack
+- Lovable
+- Supabase
+- TypeScript
+- ArmorIQ SDK
+
+## Live Demo
 https://vendor-guardian-bot.lovable.app
 
-Team: Hack Sparks
+## Team
+Hack Sparks
+
+Members:
+- Ganesh C
+- Prajval M
+- Sohan Sallagundala
+- Kiran VS

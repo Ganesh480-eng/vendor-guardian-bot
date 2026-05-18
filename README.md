@@ -86,7 +86,7 @@ If the live demo shows an error, copy the URL and paste it directly into Google 
 
 ## Presentation
 
-HackSparks_VendorGuardAI_FinalPitch.pptx
+HackSparks_VendorGuardAI_FinalPitch (2).pptx
 
 ---
 

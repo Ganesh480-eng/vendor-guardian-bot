@@ -98,9 +98,12 @@ export const evaluateVendor = createServerFn({ method: "POST" })
   "score": number, // 0=safest, 100=most risky
   "summary": string,
   "checks": Array<{ "name": string, "status": "pass"|"warn"|"fail"|"unknown", "detail": string }>, // >=5 items
+  "score_breakdown": Array<{ "factor": string, "points": number, "reason": string }>, // >=4 items, EXPLAINABLE AI
   "recommendation": string
 }\n` +
-      "Always include at least 5 checks: SOC 2, ISO 27001, GDPR/DPA, Breach history, Privacy policy freshness, Subprocessor disclosure. If unknown, set status='unknown' and explain in detail. Do not wrap in markdown.";
+      "Checks: SOC 2, ISO 27001, GDPR/DPA, Breach history, Privacy policy freshness, Subprocessor disclosure.\n" +
+      "score_breakdown: per-factor +/- point contributions; positive = adds risk, negative = reduces risk; sum approximates the final score (clamped 0-100). Example: {factor:'SOC 2 Type II', points:-20, reason:'Active cert reduces risk'}, {factor:'Public breach 2023', points:+25, reason:'Customer data leak'}.\n" +
+      "Do not wrap in markdown.";
 
     const prompt = `Vendor: ${thread.vendor_name}\n\nReturn the JSON object now. risk_level mapping: low(<33), medium(<66), high(>=66).`;
 

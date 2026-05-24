@@ -255,3 +255,71 @@ export const compareVendors = createServerFn({ method: "POST" })
     return results;
   });
 
+// SIG Questionnaire auto-responder
+const QuestionnaireAnswerSchema = z.object({
+  question: z.string(),
+  answer: z.enum(["Yes", "No", "Partial", "N/A", "Unknown"]),
+  response: z.string().describe("1-3 sentence detailed answer suitable for a SIG questionnaire."),
+  evidence: z.string().describe("Source/citation: doc name, URL pattern, or 'Public posture inference'."),
+  confidence: z.enum(["high", "medium", "low"]),
+});
+export type QuestionnaireAnswer = z.infer<typeof QuestionnaireAnswerSchema>;
+
+const QuestionnaireResultSchema = z.object({
+  vendor_name: z.string(),
+  answers: z.array(QuestionnaireAnswerSchema).min(1),
+});
+
+export const answerQuestionnaire = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        vendor_name: z.string().min(1).max(120),
+        questions: z.array(z.string().min(3).max(500)).min(1).max(120),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
+    const gateway = createLovableAiGatewayProvider(apiKey);
+    const model = gateway("google/gemini-2.5-flash");
+    const { generateText } = await import("ai");
+
+    const system =
+      "You are a Security & Compliance analyst pre-filling a SIG (Standardized Information Gathering) questionnaire for a SaaS vendor. " +
+      "Use public knowledge (trust center, security pages, SOC2/ISO certifications, GDPR/DPA, breach history, status pages). " +
+      "For EACH question, return STRICT JSON matching:\n" +
+      `{ "vendor_name": string, "answers": Array<{ "question": string, "answer": "Yes"|"No"|"Partial"|"N/A"|"Unknown", "response": string, "evidence": string, "confidence": "high"|"medium"|"low" }> }\n` +
+      "Be conservative: when unsure use 'Unknown' with low confidence. Cite plausible sources (e.g. 'vendor.com/security', 'SOC 2 Type II report (public summary)'). No markdown.";
+
+    const prompt =
+      `Vendor: ${data.vendor_name}\n\nQuestions (answer each in order):\n` +
+      data.questions.map((q, i) => `${i + 1}. ${q}`).join("\n") +
+      `\n\nReturn the JSON object now with answers[] in the SAME ORDER.`;
+
+    let result: z.infer<typeof QuestionnaireResultSchema>;
+    try {
+      const r = await generateObject({ model, schema: QuestionnaireResultSchema, system, prompt });
+      result = r.object;
+    } catch {
+      const { text } = await generateText({ model, system, prompt });
+      const match = text.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error("Model did not return JSON");
+      const parsed = JSON.parse(match[0]);
+      if (!parsed.vendor_name) parsed.vendor_name = data.vendor_name;
+      result = QuestionnaireResultSchema.parse(parsed);
+    }
+
+    await supabase.from("audit_logs").insert({
+      user_id: userId,
+      thread_id: null,
+      action: "questionnaire.generated",
+      details: { vendor: data.vendor_name, questions: data.questions.length },
+    });
+
+    return result;
+  });
+

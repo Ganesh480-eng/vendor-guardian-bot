@@ -7,7 +7,7 @@ import { listThreads, createThread, deleteThread } from "@/lib/threads.functions
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ShieldCheck, Plus, LogOut, Trash2, ShieldAlert, ShieldQuestion, GitCompare } from "lucide-react";
+import { ShieldCheck, Plus, LogOut, Trash2, ShieldAlert, ShieldQuestion, GitCompare, FileQuestion } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ location }) => {
@@ -102,6 +102,11 @@ function AuthLayout() {
           <Link to="/app/compare" className="block">
             <Button type="button" variant="outline" className="w-full h-9">
               <GitCompare className="h-4 w-4 mr-1" /> Compare vendors
+            </Button>
+          </Link>
+          <Link to="/app/questionnaire" className="block">
+            <Button type="button" variant="outline" className="w-full h-9">
+              <FileQuestion className="h-4 w-4 mr-1" /> SIG questionnaire
             </Button>
           </Link>
         </form>

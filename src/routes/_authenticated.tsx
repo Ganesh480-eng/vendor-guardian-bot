@@ -104,6 +104,11 @@ function AuthLayout() {
               <GitCompare className="h-4 w-4 mr-1" /> Compare vendors
             </Button>
           </Link>
+          <Link to="/app/questionnaire" className="block">
+            <Button type="button" variant="outline" className="w-full h-9">
+              <FileQuestion className="h-4 w-4 mr-1" /> SIG questionnaire
+            </Button>
+          </Link>
         </form>
 
         <ScrollArea className="flex-1">

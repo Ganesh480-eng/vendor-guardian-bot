@@ -99,6 +99,11 @@ function AuthLayout() {
           <Button type="submit" className="w-full h-9" disabled={creating || !vendor.trim()}>
             <Plus className="h-4 w-4 mr-1" /> {creating ? "Creating…" : "Evaluate"}
           </Button>
+          <Link to="/app/compare" className="block">
+            <Button type="button" variant="outline" className="w-full h-9">
+              <GitCompare className="h-4 w-4 mr-1" /> Compare vendors
+            </Button>
+          </Link>
         </form>
 
         <ScrollArea className="flex-1">

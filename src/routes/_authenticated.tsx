@@ -7,7 +7,7 @@ import { listThreads, createThread, deleteThread } from "@/lib/threads.functions
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ShieldCheck, Plus, LogOut, Trash2, ShieldAlert, ShieldQuestion, GitCompare } from "lucide-react";
+import { ShieldCheck, Plus, LogOut, Trash2, ShieldAlert, ShieldQuestion, GitCompare, FileQuestion } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ location }) => {

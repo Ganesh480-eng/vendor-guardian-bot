@@ -198,3 +198,47 @@ export const deleteThread = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ArmorIQ policy: vendors with score >= 50 require manager approval
+export const ARMORIQ_APPROVAL_THRESHOLD = 50;
+
+export const compareVendors = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({ vendors: z.array(z.string().min(1).max(120)).min(2).max(4) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
+    const gateway = createLovableAiGatewayProvider(apiKey);
+    const model = gateway("google/gemini-2.5-flash");
+
+    const system =
+      "You are a vendor risk analyst. For EACH vendor return the same JSON shape used elsewhere (vendor_name, risk_level, score 0-100, summary, checks[>=5], score_breakdown[>=4 with +/- points], recommendation). Output STRICT JSON: {\"results\": Vendor[]}. No markdown.";
+    const prompt = `Vendors to evaluate side-by-side: ${data.vendors.join(", ")}.\nReturn one entry per vendor in results[]. risk_level mapping: low(<33), medium(<66), high(>=66).`;
+
+    const { generateText } = await import("ai");
+    const ResultsSchema = z.object({ results: z.array(VendorEvaluationSchema).min(1) });
+
+    let parsed: z.infer<typeof ResultsSchema>;
+    try {
+      const r = await generateObject({ model, schema: ResultsSchema, system, prompt });
+      parsed = r.object;
+    } catch {
+      const { text } = await generateText({ model, system, prompt });
+      const match = text.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error("Model did not return JSON");
+      parsed = ResultsSchema.parse(JSON.parse(match[0]));
+    }
+
+    await supabase.from("audit_logs").insert({
+      user_id: userId,
+      thread_id: null,
+      action: "vendors.compared",
+      details: { vendors: data.vendors, count: parsed.results.length },
+    });
+
+    return parsed.results;
+  });
+

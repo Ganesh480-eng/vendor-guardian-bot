@@ -139,6 +139,17 @@ function ThreadPage() {
 
         <div className="border-b p-4 space-y-3">
           <div className="text-xs uppercase tracking-wider text-muted-foreground">Decision</div>
+          {evaluation && evaluation.score >= ARMORIQ_APPROVAL_THRESHOLD && thread.approval_status === "pending" && (
+            <div className="rounded-md border border-[color:var(--risk-medium)]/40 bg-[color:var(--risk-medium)]/10 px-3 py-2 text-[11px]">
+              <div className="font-display uppercase tracking-wider text-[color:var(--risk-medium)]">
+                Policy Gate Triggered
+              </div>
+              <p className="mt-1 text-muted-foreground">
+                Score {evaluation.score} ≥ threshold {ARMORIQ_APPROVAL_THRESHOLD}. Manager approval
+                required before this vendor can be marked approved.
+              </p>
+            </div>
+          )}
           {thread.approval_status === "approved" && (
             <div className="rounded-md border border-[color:var(--risk-low)]/40 bg-[color:var(--risk-low)]/15 px-3 py-2 text-sm">
               ✓ Approved by reviewer

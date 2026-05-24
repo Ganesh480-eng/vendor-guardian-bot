@@ -15,6 +15,13 @@ export const VendorEvaluationSchema = z.object({
       detail: z.string(),
     }),
   ).min(4),
+  score_breakdown: z.array(
+    z.object({
+      factor: z.string().describe("e.g. SOC 2 certification, Recent breach, GDPR/DPA available"),
+      points: z.number().describe("Positive = adds risk, negative = reduces risk. Sum approximates final score."),
+      reason: z.string(),
+    }),
+  ).min(4).describe("Explainable AI: per-factor point contributions that build the final score."),
   recommendation: z.string(),
 });
 

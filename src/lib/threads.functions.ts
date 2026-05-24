@@ -213,32 +213,45 @@ export const compareVendors = createServerFn({ method: "POST" })
     if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
     const gateway = createLovableAiGatewayProvider(apiKey);
     const model = gateway("google/gemini-2.5-flash");
+    const { generateText } = await import("ai");
 
     const system =
-      "You are a vendor risk analyst. For EACH vendor return the same JSON shape used elsewhere (vendor_name, risk_level, score 0-100, summary, checks[>=5], score_breakdown[>=4 with +/- points], recommendation). Output STRICT JSON: {\"results\": Vendor[]}. No markdown.";
-    const prompt = `Vendors to evaluate side-by-side: ${data.vendors.join(", ")}.\nReturn one entry per vendor in results[]. risk_level mapping: low(<33), medium(<66), high(>=66).`;
+      "You are a vendor risk assessment analyst. Return STRICT JSON only matching this TypeScript type:\n" +
+      `{
+  "vendor_name": string,
+  "risk_level": "low" | "medium" | "high",
+  "score": number,
+  "summary": string,
+  "checks": Array<{ "name": string, "status": "pass"|"warn"|"fail"|"unknown", "detail": string }>,
+  "score_breakdown": Array<{ "factor": string, "points": number, "reason": string }>,
+  "recommendation": string
+}\n` +
+      "Checks (>=5 items): SOC 2, ISO 27001, GDPR/DPA, Breach history, Privacy policy freshness, Subprocessor disclosure. Each check MUST be an object with name/status/detail fields (never a plain string). score_breakdown >=4 items with +/- points. No markdown.";
 
-    const { generateText } = await import("ai");
-    const ResultsSchema = z.object({ results: z.array(VendorEvaluationSchema).min(1) });
+    const evalOne = async (vendor: string) => {
+      const prompt = `Vendor: ${vendor}\nReturn the JSON object now. risk_level mapping: low(<33), medium(<66), high(>=66).`;
+      try {
+        const r = await generateObject({ model, schema: VendorEvaluationSchema, system, prompt });
+        return r.object;
+      } catch {
+        const { text } = await generateText({ model, system, prompt });
+        const match = text.match(/\{[\s\S]*\}/);
+        if (!match) throw new Error(`Model did not return JSON for ${vendor}`);
+        const parsed = JSON.parse(match[0]);
+        if (!parsed.vendor_name) parsed.vendor_name = vendor;
+        return VendorEvaluationSchema.parse(parsed);
+      }
+    };
 
-    let parsed: z.infer<typeof ResultsSchema>;
-    try {
-      const r = await generateObject({ model, schema: ResultsSchema, system, prompt });
-      parsed = r.object;
-    } catch {
-      const { text } = await generateText({ model, system, prompt });
-      const match = text.match(/\{[\s\S]*\}/);
-      if (!match) throw new Error("Model did not return JSON");
-      parsed = ResultsSchema.parse(JSON.parse(match[0]));
-    }
+    const results = await Promise.all(data.vendors.map(evalOne));
 
     await supabase.from("audit_logs").insert({
       user_id: userId,
       thread_id: null,
       action: "vendors.compared",
-      details: { vendors: data.vendors, count: parsed.results.length },
+      details: { vendors: data.vendors, count: results.length },
     });
 
-    return parsed.results;
+    return results;
   });
 

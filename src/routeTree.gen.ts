@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app/index'
+import { Route as AuthenticatedAppCompareRouteImport } from './routes/_authenticated/app/compare'
 import { Route as AuthenticatedAppThreadIdRouteImport } from './routes/_authenticated/app/$threadId'
 
 const LoginRoute = LoginRouteImport.update({
@@ -34,6 +35,11 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   path: '/app/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAppCompareRoute = AuthenticatedAppCompareRouteImport.update({
+  id: '/app/compare',
+  path: '/app/compare',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedAppThreadIdRoute =
   AuthenticatedAppThreadIdRouteImport.update({
     id: '/app/$threadId',
@@ -45,12 +51,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/app/$threadId': typeof AuthenticatedAppThreadIdRoute
+  '/app/compare': typeof AuthenticatedAppCompareRoute
   '/app/': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/app/$threadId': typeof AuthenticatedAppThreadIdRoute
+  '/app/compare': typeof AuthenticatedAppCompareRoute
   '/app': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRoutesById {
@@ -59,19 +67,21 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/app/$threadId': typeof AuthenticatedAppThreadIdRoute
+  '/_authenticated/app/compare': typeof AuthenticatedAppCompareRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/app/$threadId' | '/app/'
+  fullPaths: '/' | '/login' | '/app/$threadId' | '/app/compare' | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/app/$threadId' | '/app'
+  to: '/' | '/login' | '/app/$threadId' | '/app/compare' | '/app'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/login'
     | '/_authenticated/app/$threadId'
+    | '/_authenticated/app/compare'
     | '/_authenticated/app/'
   fileRoutesById: FileRoutesById
 }
@@ -111,6 +121,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/app/compare': {
+      id: '/_authenticated/app/compare'
+      path: '/app/compare'
+      fullPath: '/app/compare'
+      preLoaderRoute: typeof AuthenticatedAppCompareRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/app/$threadId': {
       id: '/_authenticated/app/$threadId'
       path: '/app/$threadId'
@@ -123,11 +140,13 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteChildren {
   AuthenticatedAppThreadIdRoute: typeof AuthenticatedAppThreadIdRoute
+  AuthenticatedAppCompareRoute: typeof AuthenticatedAppCompareRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAppThreadIdRoute: AuthenticatedAppThreadIdRoute,
+  AuthenticatedAppCompareRoute: AuthenticatedAppCompareRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }
 
@@ -143,13 +162,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

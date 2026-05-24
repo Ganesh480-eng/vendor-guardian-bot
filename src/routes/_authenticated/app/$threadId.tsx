@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getThread, evaluateVendor, setApproval } from "@/lib/threads.functions";
+import { getThread, evaluateVendor, setApproval, ARMORIQ_APPROVAL_THRESHOLD } from "@/lib/threads.functions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -139,6 +139,17 @@ function ThreadPage() {
 
         <div className="border-b p-4 space-y-3">
           <div className="text-xs uppercase tracking-wider text-muted-foreground">Decision</div>
+          {evaluation && evaluation.score >= ARMORIQ_APPROVAL_THRESHOLD && thread.approval_status === "pending" && (
+            <div className="rounded-md border border-[color:var(--risk-medium)]/40 bg-[color:var(--risk-medium)]/10 px-3 py-2 text-[11px]">
+              <div className="font-display uppercase tracking-wider text-[color:var(--risk-medium)]">
+                Policy Gate Triggered
+              </div>
+              <p className="mt-1 text-muted-foreground">
+                Score {evaluation.score} ≥ threshold {ARMORIQ_APPROVAL_THRESHOLD}. Manager approval
+                required before this vendor can be marked approved.
+              </p>
+            </div>
+          )}
           {thread.approval_status === "approved" && (
             <div className="rounded-md border border-[color:var(--risk-low)]/40 bg-[color:var(--risk-low)]/15 px-3 py-2 text-sm">
               ✓ Approved by reviewer
@@ -227,6 +238,44 @@ function EvaluationCard({ ev }: { ev: VendorEvaluation }) {
             </div>
           ))}
         </div>
+
+        {ev.score_breakdown && ev.score_breakdown.length > 0 && (
+          <div className="rounded-md border border-border/60 bg-muted/20 p-3">
+            <div className="mb-2 flex items-center gap-2">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              <div className="font-display text-[10px] uppercase tracking-wider text-primary">
+                Score Breakdown · Explainable AI
+              </div>
+            </div>
+            <div className="space-y-1">
+              {ev.score_breakdown.map((b, i) => {
+                const positive = b.points > 0; // positive = adds risk
+                return (
+                  <div key={i} className="flex items-start gap-2 text-xs">
+                    <span
+                      className={`min-w-[3rem] rounded px-1.5 py-0.5 text-center font-mono text-[10px] ${
+                        positive
+                          ? "bg-[color:var(--risk-high)]/15 text-[color:var(--risk-high)]"
+                          : "bg-[color:var(--risk-low)]/15 text-[color:var(--risk-low)]"
+                      }`}
+                    >
+                      {positive ? "+" : ""}
+                      {b.points}
+                    </span>
+                    <div className="flex-1">
+                      <div className="font-medium">{b.factor}</div>
+                      <div className="text-muted-foreground">{b.reason}</div>
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="mt-2 flex items-center justify-between border-t border-border/40 pt-2 text-xs">
+                <span className="text-muted-foreground">Final risk score</span>
+                <span className="font-display text-base">{ev.score}/100</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
           <div className="text-[10px] font-display uppercase tracking-wider text-primary">Recommendation</div>

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getThread, evaluateVendor, setApproval } from "@/lib/threads.functions";
+import { getThread, evaluateVendor, setApproval, ARMORIQ_APPROVAL_THRESHOLD } from "@/lib/threads.functions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

@@ -109,6 +109,11 @@ function AuthLayout() {
               <FileQuestion className="h-4 w-4 mr-1" /> SIG questionnaire
             </Button>
           </Link>
+          <Link to="/app/policies" className="block">
+            <Button type="button" variant="outline" className="w-full h-9">
+              <Lock className="h-4 w-4 mr-1" /> ArmorIQ policies
+            </Button>
+          </Link>
         </form>
 
         <ScrollArea className="flex-1">

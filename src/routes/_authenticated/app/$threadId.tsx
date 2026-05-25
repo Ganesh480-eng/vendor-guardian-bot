@@ -133,49 +133,16 @@ function ThreadPage() {
           <div className="flex items-center gap-2">
             <Lock className="h-4 w-4 text-primary" />
             <h2 className="font-display text-sm uppercase tracking-wider">ArmorIQ Gate</h2>
-            <Badge variant="outline" className="ml-auto text-[10px]">mock</Badge>
+            <Badge variant="outline" className="ml-auto text-[10px]">policy engine</Badge>
           </div>
         </div>
 
-        <div className="border-b p-4 space-y-3">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">Decision</div>
-          {evaluation && evaluation.score >= ARMORIQ_APPROVAL_THRESHOLD && thread.approval_status === "pending" && (
-            <div className="rounded-md border border-[color:var(--risk-medium)]/40 bg-[color:var(--risk-medium)]/10 px-3 py-2 text-[11px]">
-              <div className="font-display uppercase tracking-wider text-[color:var(--risk-medium)]">
-                Policy Gate Triggered
-              </div>
-              <p className="mt-1 text-muted-foreground">
-                Score {evaluation.score} ≥ threshold {ARMORIQ_APPROVAL_THRESHOLD}. Manager approval
-                required before this vendor can be marked approved.
-              </p>
-            </div>
-          )}
-          {thread.approval_status === "approved" && (
-            <div className="rounded-md border border-[color:var(--risk-low)]/40 bg-[color:var(--risk-low)]/15 px-3 py-2 text-sm">
-              ✓ Approved by reviewer
-            </div>
-          )}
-          {thread.approval_status === "rejected" && (
-            <div className="rounded-md border border-[color:var(--risk-high)]/40 bg-[color:var(--risk-high)]/15 px-3 py-2 text-sm">
-              ✗ Rejected by reviewer
-            </div>
-          )}
-          {thread.approval_status === "pending" && (
-            <p className="text-xs text-muted-foreground">
-              Policy: agent recommendations require human approval before mark as approved vendor.
-            </p>
-          )}
-          {(thread.approval_status === "pending" || thread.approval_status === "none") && evaluation && (
-            <div className="grid grid-cols-2 gap-2">
-              <Button size="sm" variant="default" onClick={() => decide("approved")}>
-                <Check className="h-3.5 w-3.5 mr-1" /> Approve
-              </Button>
-              <Button size="sm" variant="destructive" onClick={() => decide("rejected")}>
-                <X className="h-3.5 w-3.5 mr-1" /> Reject
-              </Button>
-            </div>
-          )}
-        </div>
+        <ArmorIQPanel
+          evaluation={evaluation as any}
+          approvalStatus={thread.approval_status}
+          onDecide={decide}
+        />
+
 
         <div className="flex items-center gap-2 border-b px-4 py-3">
           <FileText className="h-4 w-4 text-primary" />

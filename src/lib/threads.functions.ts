@@ -4,6 +4,7 @@ import { generateObject } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createLovableAiGatewayProvider } from "./ai-gateway";
 import { VendorEvaluationSchema } from "./vendor-schema";
+import { evaluateArmorIQ, ARMORIQ_POLICIES } from "./armoriq";
 
 export const listThreads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -135,15 +136,19 @@ export const evaluateVendor = createServerFn({ method: "POST" })
       parts: { evaluation: object },
     });
 
+    // ─── ArmorIQ Policy Engine ────────────────────────────────────────────
+    const armoriqReport = evaluateArmorIQ(object);
+
     await supabase
       .from("threads")
       .update({
-        current_evaluation: object,
-        approval_status: "pending",
+        current_evaluation: { ...object, armoriq: armoriqReport } as any,
+        approval_status: armoriqReport.decision === "auto_approve" ? "approved" : "pending",
         updated_at: new Date().toISOString(),
       })
       .eq("id", thread.id);
 
+    // Audit: top-level evaluation event
     await supabase.from("audit_logs").insert({
       user_id: userId,
       thread_id: thread.id,
@@ -155,7 +160,41 @@ export const evaluateVendor = createServerFn({ method: "POST" })
       },
     });
 
-    return object;
+    // Audit: ArmorIQ gate decision
+    await supabase.from("audit_logs").insert({
+      user_id: userId,
+      thread_id: thread.id,
+      action: `armoriq.gate.${armoriqReport.decision}`,
+      details: {
+        summary: armoriqReport.summary,
+        passed: armoriqReport.policies_passed,
+        failed: armoriqReport.policies_failed,
+        evaluated: armoriqReport.policies_evaluated,
+      },
+    });
+
+    // Audit: one entry per policy evaluation (full traceability)
+    const policyRows = armoriqReport.evaluations.map((e) => ({
+      user_id: userId,
+      thread_id: thread.id,
+      action: `armoriq.policy.${e.status}`,
+      details: {
+        policy_id: e.policy_id,
+        policy_name: e.policy_name,
+        severity: e.severity,
+        reason: e.reason,
+        remediation: e.remediation ?? null,
+      },
+    }));
+    if (policyRows.length) await supabase.from("audit_logs").insert(policyRows);
+
+    return { ...object, armoriq: armoriqReport };
+  });
+
+export const listArmorIQPolicies = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    return ARMORIQ_POLICIES;
   });
 
 export const setApproval = createServerFn({ method: "POST" })

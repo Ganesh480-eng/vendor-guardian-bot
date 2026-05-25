@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app/index'
 import { Route as AuthenticatedAppQuestionnaireRouteImport } from './routes/_authenticated/app/questionnaire'
+import { Route as AuthenticatedAppPoliciesRouteImport } from './routes/_authenticated/app/policies'
 import { Route as AuthenticatedAppCompareRouteImport } from './routes/_authenticated/app/compare'
 import { Route as AuthenticatedAppThreadIdRouteImport } from './routes/_authenticated/app/$threadId'
 
@@ -42,6 +43,12 @@ const AuthenticatedAppQuestionnaireRoute =
     path: '/app/questionnaire',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAppPoliciesRoute =
+  AuthenticatedAppPoliciesRouteImport.update({
+    id: '/app/policies',
+    path: '/app/policies',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAppCompareRoute = AuthenticatedAppCompareRouteImport.update({
   id: '/app/compare',
   path: '/app/compare',
@@ -59,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/app/$threadId': typeof AuthenticatedAppThreadIdRoute
   '/app/compare': typeof AuthenticatedAppCompareRoute
+  '/app/policies': typeof AuthenticatedAppPoliciesRoute
   '/app/questionnaire': typeof AuthenticatedAppQuestionnaireRoute
   '/app/': typeof AuthenticatedAppIndexRoute
 }
@@ -67,6 +75,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/app/$threadId': typeof AuthenticatedAppThreadIdRoute
   '/app/compare': typeof AuthenticatedAppCompareRoute
+  '/app/policies': typeof AuthenticatedAppPoliciesRoute
   '/app/questionnaire': typeof AuthenticatedAppQuestionnaireRoute
   '/app': typeof AuthenticatedAppIndexRoute
 }
@@ -77,6 +86,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_authenticated/app/$threadId': typeof AuthenticatedAppThreadIdRoute
   '/_authenticated/app/compare': typeof AuthenticatedAppCompareRoute
+  '/_authenticated/app/policies': typeof AuthenticatedAppPoliciesRoute
   '/_authenticated/app/questionnaire': typeof AuthenticatedAppQuestionnaireRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
 }
@@ -87,6 +97,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/app/$threadId'
     | '/app/compare'
+    | '/app/policies'
     | '/app/questionnaire'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
@@ -95,6 +106,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/app/$threadId'
     | '/app/compare'
+    | '/app/policies'
     | '/app/questionnaire'
     | '/app'
   id:
@@ -104,6 +116,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_authenticated/app/$threadId'
     | '/_authenticated/app/compare'
+    | '/_authenticated/app/policies'
     | '/_authenticated/app/questionnaire'
     | '/_authenticated/app/'
   fileRoutesById: FileRoutesById
@@ -151,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppQuestionnaireRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/app/policies': {
+      id: '/_authenticated/app/policies'
+      path: '/app/policies'
+      fullPath: '/app/policies'
+      preLoaderRoute: typeof AuthenticatedAppPoliciesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/app/compare': {
       id: '/_authenticated/app/compare'
       path: '/app/compare'
@@ -171,6 +191,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedAppThreadIdRoute: typeof AuthenticatedAppThreadIdRoute
   AuthenticatedAppCompareRoute: typeof AuthenticatedAppCompareRoute
+  AuthenticatedAppPoliciesRoute: typeof AuthenticatedAppPoliciesRoute
   AuthenticatedAppQuestionnaireRoute: typeof AuthenticatedAppQuestionnaireRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
@@ -178,6 +199,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAppThreadIdRoute: AuthenticatedAppThreadIdRoute,
   AuthenticatedAppCompareRoute: AuthenticatedAppCompareRoute,
+  AuthenticatedAppPoliciesRoute: AuthenticatedAppPoliciesRoute,
   AuthenticatedAppQuestionnaireRoute: AuthenticatedAppQuestionnaireRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }
@@ -194,13 +216,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

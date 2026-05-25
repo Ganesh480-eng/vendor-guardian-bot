@@ -253,3 +253,146 @@ function EvaluationCard({ ev }: { ev: VendorEvaluation }) {
     </Card>
   );
 }
+
+// ─── ArmorIQ Panel ─────────────────────────────────────────────────────────
+const decisionMeta = {
+  auto_approve: {
+    label: "AUTO-APPROVED",
+    color: "text-[color:var(--risk-low)]",
+    bg: "bg-[color:var(--risk-low)]/15",
+    border: "border-[color:var(--risk-low)]/40",
+    Icon: ShieldCheck,
+  },
+  manual_review: {
+    label: "MANUAL REVIEW",
+    color: "text-[color:var(--risk-medium)]",
+    bg: "bg-[color:var(--risk-medium)]/15",
+    border: "border-[color:var(--risk-medium)]/40",
+    Icon: ShieldAlert,
+  },
+  blocked: {
+    label: "BLOCKED",
+    color: "text-[color:var(--risk-high)]",
+    bg: "bg-[color:var(--risk-high)]/15",
+    border: "border-[color:var(--risk-high)]/40",
+    Icon: Ban,
+  },
+} as const;
+
+function policyStatusIcon(s: string) {
+  if (s === "pass") return <Check className="h-3 w-3 text-[color:var(--risk-low)]" />;
+  if (s === "fail") return <X className="h-3 w-3 text-[color:var(--risk-high)]" />;
+  if (s === "warn") return <ShieldAlert className="h-3 w-3 text-[color:var(--risk-medium)]" />;
+  return <ShieldQuestion className="h-3 w-3 text-muted-foreground" />;
+}
+
+function ArmorIQPanel({
+  evaluation,
+  approvalStatus,
+  onDecide,
+}: {
+  evaluation: (VendorEvaluation & { armoriq?: ArmorIQReport }) | null;
+  approvalStatus: string;
+  onDecide: (d: "approved" | "rejected") => void;
+}) {
+  const report = evaluation?.armoriq;
+
+  if (!evaluation || !report) {
+    return (
+      <div className="border-b p-4 text-xs text-muted-foreground">
+        Awaiting evaluation. ArmorIQ will gate the decision once AI analysis completes.
+      </div>
+    );
+  }
+
+  const meta = decisionMeta[report.decision];
+
+  return (
+    <div className="border-b">
+      <div className={`px-4 py-3 ${meta.bg} border-b ${meta.border}`}>
+        <div className="flex items-center gap-2">
+          <meta.Icon className={`h-5 w-5 ${meta.color}`} />
+          <div className="flex-1">
+            <div className={`font-display text-sm tracking-wider ${meta.color}`}>
+              {meta.label}
+            </div>
+            <div className="text-[10px] uppercase text-muted-foreground">ArmorIQ Gate Decision</div>
+          </div>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">{report.summary}</p>
+        <div className="mt-2 flex gap-3 text-[10px] uppercase tracking-wider text-muted-foreground">
+          <span><span className="text-[color:var(--risk-low)] font-mono">{report.policies_passed}</span> pass</span>
+          <span><span className="text-[color:var(--risk-high)] font-mono">{report.policies_failed}</span> fail</span>
+          <span><span className="font-mono">{report.policies_evaluated}</span> total</span>
+        </div>
+      </div>
+
+      <div className="space-y-1.5 p-3">
+        {report.evaluations.map((e) => (
+          <div
+            key={e.policy_id}
+            className="rounded border border-border/40 bg-background/40 px-2.5 py-2 text-[11px]"
+          >
+            <div className="flex items-start gap-2">
+              <div className="mt-0.5">{policyStatusIcon(e.status)}</div>
+              <div className="flex-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono text-[9px] text-muted-foreground">{e.policy_id}</span>
+                  <Badge
+                    variant="outline"
+                    className={`text-[9px] uppercase ${
+                      e.severity === "critical"
+                        ? "text-[color:var(--risk-high)] border-[color:var(--risk-high)]/40"
+                        : e.severity === "warning"
+                          ? "text-[color:var(--risk-medium)] border-[color:var(--risk-medium)]/40"
+                          : "text-primary border-primary/40"
+                    }`}
+                  >
+                    {e.severity}
+                  </Badge>
+                </div>
+                <div className="mt-0.5 font-medium leading-tight">{e.policy_name}</div>
+                <div className="mt-0.5 text-muted-foreground">{e.reason}</div>
+                {e.remediation && (
+                  <div className="mt-1 rounded bg-muted/40 px-1.5 py-1 text-[10px] text-muted-foreground">
+                    <span className="font-medium text-foreground">Fix:</span> {e.remediation}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-2 border-t p-4">
+        {approvalStatus === "approved" && (
+          <div className="rounded-md border border-[color:var(--risk-low)]/40 bg-[color:var(--risk-low)]/15 px-3 py-2 text-sm">
+            ✓ Approved by reviewer
+          </div>
+        )}
+        {approvalStatus === "rejected" && (
+          <div className="rounded-md border border-[color:var(--risk-high)]/40 bg-[color:var(--risk-high)]/15 px-3 py-2 text-sm">
+            ✗ Rejected by reviewer
+          </div>
+        )}
+        {(approvalStatus === "pending" || approvalStatus === "none") && report.decision !== "auto_approve" && (
+          <>
+            <p className="text-[11px] text-muted-foreground">
+              {report.decision === "blocked"
+                ? "Critical policy violation. Override requires CISO approval."
+                : "Manual review required per ArmorIQ policy."}
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <Button size="sm" variant="default" onClick={() => onDecide("approved")}>
+                <Check className="h-3.5 w-3.5 mr-1" /> Override & Approve
+              </Button>
+              <Button size="sm" variant="destructive" onClick={() => onDecide("rejected")}>
+                <X className="h-3.5 w-3.5 mr-1" /> Reject
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -4,6 +4,7 @@ import { generateObject } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createLovableAiGatewayProvider } from "./ai-gateway";
 import { VendorEvaluationSchema } from "./vendor-schema";
+import { evaluateArmorIQ, ARMORIQ_POLICIES } from "./armoriq";
 
 export const listThreads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

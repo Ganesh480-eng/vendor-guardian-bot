@@ -375,22 +375,29 @@ function ArmorIQPanel({
             ✗ Rejected by reviewer
           </div>
         )}
-        {(approvalStatus === "pending" || approvalStatus === "none") && report.decision !== "auto_approve" && (
+        {(approvalStatus === "pending" || approvalStatus === "none") && (
           <>
             <p className="text-[11px] text-muted-foreground">
               {report.decision === "blocked"
                 ? "Critical policy violation. Override requires CISO approval."
-                : "Manual review required per ArmorIQ policy."}
+                : report.decision === "manual_review"
+                  ? "Manual review required per ArmorIQ policy."
+                  : "ArmorIQ recommends auto-approval. Reviewer sign-off optional."}
             </p>
             <div className="grid grid-cols-2 gap-2">
               <Button size="sm" variant="default" onClick={() => onDecide("approved")}>
-                <Check className="h-3.5 w-3.5 mr-1" /> Override & Approve
+                <Check className="h-3.5 w-3.5 mr-1" /> Approve
               </Button>
               <Button size="sm" variant="destructive" onClick={() => onDecide("rejected")}>
                 <X className="h-3.5 w-3.5 mr-1" /> Reject
               </Button>
             </div>
           </>
+        )}
+        {(approvalStatus === "approved" || approvalStatus === "rejected") && (
+          <Button size="sm" variant="outline" className="w-full" onClick={() => onDecide(approvalStatus === "approved" ? "rejected" : "approved")}>
+            Change decision to {approvalStatus === "approved" ? "Reject" : "Approve"}
+          </Button>
         )}
       </div>
     </div>

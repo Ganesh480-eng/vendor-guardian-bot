@@ -139,7 +139,7 @@ function ThreadPage() {
         </div>
 
         <ArmorIQPanel
-          evaluation={evaluation as any}
+          evaluation={(thread.current_evaluation as any) ?? (evaluation as any)}
           approvalStatus={thread.approval_status}
           onDecide={decide}
         />

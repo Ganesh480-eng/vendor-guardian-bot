@@ -291,7 +291,7 @@ function ArmorIQPanel({
   approvalStatus,
   onDecide,
 }: {
-  evaluation: (VendorEvaluation & { armoriq?: ArmorIQReport }) | null;
+  evaluation: (VendorEvaluation & { armoriq?: ArmorIQReport & { live?: { armoriq: { ok: boolean; status?: number; endpoint: string; error?: string }; armorclaw: { ok: boolean; status?: number; endpoint: string; error?: string } } } }) | null;
   approvalStatus: string;
   onDecide: (d: "approved" | "rejected") => void;
 }) {
@@ -326,6 +326,28 @@ function ArmorIQPanel({
           <span><span className="font-mono">{report.policies_evaluated}</span> total</span>
         </div>
       </div>
+
+      {report.live && (
+        <div className="border-b bg-muted/20 px-4 py-2.5 text-[10px]">
+          <div className="mb-1 font-display uppercase tracking-wider text-muted-foreground">
+            Live Platform Calls
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="font-mono">platform.armoriq.ai</span>
+              <span className={report.live.armoriq.ok ? "text-[color:var(--risk-low)]" : "text-[color:var(--risk-high)]"}>
+                {report.live.armoriq.ok ? `✓ ${report.live.armoriq.status}` : `✗ ${report.live.armoriq.status ?? "ERR"}`}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="font-mono">claw.armoriq.ai</span>
+              <span className={report.live.armorclaw.ok ? "text-[color:var(--risk-low)]" : "text-[color:var(--risk-high)]"}>
+                {report.live.armorclaw.ok ? `✓ ${report.live.armorclaw.status}` : `✗ ${report.live.armorclaw.status ?? "ERR"}`}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-1.5 p-3">
         {report.evaluations.map((e) => (

@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createLovableAiGatewayProvider } from "./ai-gateway";
 import { VendorEvaluationSchema } from "./vendor-schema";
 import { evaluateArmorIQ, ARMORIQ_POLICIES } from "./armoriq";
+import { callLiveGovernance } from "./armoriq-client.server";
 
 export const listThreads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -136,13 +137,23 @@ export const evaluateVendor = createServerFn({ method: "POST" })
       parts: { evaluation: object },
     });
 
-    // ─── ArmorIQ Policy Engine ────────────────────────────────────────────
+    // ─── ArmorIQ Policy Engine (local) ────────────────────────────────────
     const armoriqReport = evaluateArmorIQ(object);
+
+    // ─── Live ArmorIQ + ArmorClaw platform calls (best-effort) ────────────
+    const live = await callLiveGovernance(object).catch((e) => ({
+      armoriq: { ok: false, endpoint: "", error: String(e?.message ?? e) },
+      armorclaw: { ok: false, endpoint: "", error: String(e?.message ?? e) },
+    }));
+
+    const armoriqWithLive = { ...armoriqReport, live } as typeof armoriqReport & {
+      live: typeof live;
+    };
 
     await supabase
       .from("threads")
       .update({
-        current_evaluation: { ...object, armoriq: armoriqReport } as any,
+        current_evaluation: { ...object, armoriq: armoriqWithLive } as any,
         approval_status: armoriqReport.decision === "auto_approve" ? "approved" : "pending",
         updated_at: new Date().toISOString(),
       })
@@ -173,6 +184,22 @@ export const evaluateVendor = createServerFn({ method: "POST" })
       },
     });
 
+    // Audit: live platform calls (ArmorIQ + ArmorClaw)
+    await supabase.from("audit_logs").insert([
+      {
+        user_id: userId,
+        thread_id: thread.id,
+        action: `armoriq.live.${live.armoriq.ok ? "ok" : "error"}`,
+        details: live.armoriq as any,
+      },
+      {
+        user_id: userId,
+        thread_id: thread.id,
+        action: `armorclaw.live.${live.armorclaw.ok ? "ok" : "error"}`,
+        details: live.armorclaw as any,
+      },
+    ]);
+
     // Audit: one entry per policy evaluation (full traceability)
     const policyRows = armoriqReport.evaluations.map((e) => ({
       user_id: userId,
@@ -188,7 +215,7 @@ export const evaluateVendor = createServerFn({ method: "POST" })
     }));
     if (policyRows.length) await supabase.from("audit_logs").insert(policyRows);
 
-    return { ...object, armoriq: armoriqReport };
+    return { ...object, armoriq: armoriqWithLive };
   });
 
 export const listArmorIQPolicies = createServerFn({ method: "GET" })

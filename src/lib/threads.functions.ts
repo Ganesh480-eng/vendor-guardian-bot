@@ -215,7 +215,7 @@ export const evaluateVendor = createServerFn({ method: "POST" })
     }));
     if (policyRows.length) await supabase.from("audit_logs").insert(policyRows);
 
-    return { ...object, armoriq: armoriqWithLive };
+    return { ...object, armoriq: armoriqWithLive } as any;
   });
 
 export const listArmorIQPolicies = createServerFn({ method: "GET" })

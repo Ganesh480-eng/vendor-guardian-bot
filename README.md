@@ -102,13 +102,10 @@ Team Name: Hack Sparks
 
 Members:
 - Ganesh C
-- Prajval M
-- Sohan Sallagundala
-- Kiran VS
+
 
 Institution:
 Bangalore Institute of Technology (BIT)  
-Sapthagiri NPS University
 
 ---
 
